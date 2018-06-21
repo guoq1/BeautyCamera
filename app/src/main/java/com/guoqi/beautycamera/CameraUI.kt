@@ -361,26 +361,22 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
         try {
             val parameters = camera!!.parameters
 
+            //连续对焦
             if (parameters.supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 parameters.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
             }
 
-            //这里第三个参数为最小尺寸 getPropPreviewSize方法会对从最小尺寸开始升序排列 取出所有支持尺寸的最小尺寸
-            val previewSize = CameraUtil.getInstance().getPropSizeForHeight(parameters.supportedPreviewSizes, 800)
-            Log.e(TAG, "previewSize = " + previewSize.width + " | " + previewSize.height)
-            parameters.setPreviewSize(previewSize.width, previewSize.height)
-
-            val pictrueSize = CameraUtil.getInstance().getPropSizeForHeight(parameters.supportedPictureSizes, 800)
-            Log.e(TAG, "pictureSize = " + pictrueSize.width + " | " + pictrueSize.height)
-            parameters.setPictureSize(pictrueSize.width, pictrueSize.height)
+            //设置图片尺寸
+            val pictureSize = CameraUtil.getInstance().getPropSizeForHeight(parameters.supportedPictureSizes, 800)
+            Log.e(TAG, "pictureSize = " + pictureSize.width + " | " + pictureSize.height)
+            parameters.setPictureSize(pictureSize.width, pictureSize.height)
 
             camera.parameters = parameters
 
-            picHeight = screenWidth * pictrueSize.width / pictrueSize.height
+            picHeight = screenWidth * pictureSize.width / pictureSize.height
 
             //修正预览拉长效果
             var params = changePreviewSize(camera, picHeight, screenWidth)
-            Log.e(TAG, "surfaceView展现的尺寸:" + params.height + "*" + params.width)
             surfaceView!!.layoutParams = params
 
         } catch (e: Exception) {
@@ -389,20 +385,16 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
     }
 
     /**
-     * 修改相机的预览尺寸，调用此方法就行
-     *
-     * @param camera     相机实例
-     * @param viewWidth  预览的surfaceView的宽
-     * @param viewHeight 预览的surfaceView的高
+     * 修改相机的预览尺寸
      */
     private fun changePreviewSize(camera: Camera, viewWidth: Int, viewHeight: Int): FrameLayout.LayoutParams {
         var parameters = camera.parameters;
         var sizeList = parameters.supportedPreviewSizes
         var closelySize: Camera.Size? = null//储存最合适的尺寸
-        Log.e(TAG, "camera拍照的尺寸 :" + viewWidth + " * " + viewHeight)
+        Log.e(TAG, """camera拍照的尺寸 :$viewWidth * $viewHeight""")
         for (size in sizeList) {
             Log.e(TAG, "camera支持的preview尺寸 :" + size.width + " * " + size.height)
-            //先查找preview中是否存在与surfaceview相同宽高的尺寸
+            //先查找preview中是否存在与surfaceView相同宽高的尺寸
             if ((size.width == viewWidth) && (size.height == viewHeight)) {
                 closelySize = size;
             }
@@ -419,29 +411,29 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
                 deltaRatio = Math.abs(reqRatio - curRatio);
                 if (deltaRatio < deltaRatioMin) {
                     deltaRatioMin = deltaRatio;
-                    Log.e(TAG, "最接近pic尺寸的预览尺寸比例:" + deltaRatioMin)
+                    Log.e(TAG, "最接近pic尺寸的预览尺寸比例:$deltaRatioMin")
                     Log.e(TAG, "最接近pic尺寸的预览尺寸:" + size.width + "*" + size.height)
                     closelySize = size;
                 }
             }
         }
 
-        //下面是调整预览时的尺寸
+        //下面是调整特殊情况预览时的尺寸
         //修复华为mate7前置摄像头预览为(1280*720=1.777),不够屏幕宽度(1920*1080=1.777),预览图象太小问题
         if (closelySize!!.height < screenWidth) {
-            Log.e(TAG, "摄像头预览尺寸(" + closelySize?.width + "*" + closelySize?.height + ") < 屏幕宽度(" + screenHeight + "*" + screenWidth + ")")
+            Log.e(TAG, "摄像头预览尺寸(" + closelySize.width + "*" + closelySize.height + ") < 屏幕宽度(" + screenHeight + "*" + screenWidth + ")")
 
             //以屏幕宽度为比例,应当显示的预览高度为1920*1080 ,然而屏幕高度获取为1812 < 应预览高度1920
             var shouldPreviewHeight = (screenWidth * closelySize.width) / closelySize.height
             if (screenHeight < shouldPreviewHeight) {
                 //此时应当拿高度来做比例
-                closelySize?.width = screenHeight
-                closelySize?.height = (screenHeight * closelySize.height) / closelySize.width
+                closelySize.width = screenHeight
+                closelySize.height = (screenHeight * closelySize.height) / closelySize.width
             } else {
-                closelySize?.width = screenWidth
-                closelySize?.height = shouldPreviewHeight
+                closelySize.width = screenWidth
+                closelySize.height = shouldPreviewHeight
             }
-            Log.e(TAG, "调整预览尺寸为：" + closelySize?.width + "*" + closelySize?.height);
+            Log.e(TAG, "调整预览尺寸为：" + closelySize.width + "*" + closelySize.height);
         }
 
         //空白占位高度 = screenHeight - 预览高度closelySize.height - 顶部栏
@@ -449,18 +441,18 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
         //如果屏幕预览高度占不满屏幕,则顶部空出操作栏高度
         var hasBlankHeight = SizeUtil.px2dp(this, (screenHeight - closelySize!!.width).toFloat() / 2) > 44
         if (hasBlankHeight) {
-            val Params = RelativeLayout.LayoutParams(screenWidth, SizeUtil.dp2px(this, 44f)/*SizeUtil.px2dp(this, (screenHeight - closelySize.width).toFloat() / 2)*/)
-            homeCustom_cover_top_view!!.layoutParams = Params
+            val params = RelativeLayout.LayoutParams(screenWidth, SizeUtil.dp2px(this, 44f)/*SizeUtil.px2dp(this, (screenHeight - closelySize.width).toFloat() / 2)*/)
+            homeCustom_cover_top_view!!.layoutParams = params
         } else {
-            val Params = RelativeLayout.LayoutParams(screenWidth, 0)
-            homeCustom_cover_top_view!!.layoutParams = Params
+            val params = RelativeLayout.LayoutParams(screenWidth, 0)
+            homeCustom_cover_top_view!!.layoutParams = params
         }
 
-        //设置相机可接受的尺寸
-        parameters.setPreviewSize(closelySize!!.width, closelySize!!.height)
+        //设置相机最接近的预览尺寸
+        parameters.setPreviewSize(closelySize.width, closelySize.height)
         camera.parameters = parameters
 
-        Log.e(TAG, "预览尺寸最终修改为：" + closelySize?.width + "*" + closelySize?.height);
+        Log.e(TAG, "预览尺寸最终修改为：" + closelySize.width + "*" + closelySize.height);
         return FrameLayout.LayoutParams(closelySize.height, closelySize.width)
     }
 
