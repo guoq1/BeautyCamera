@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         }
         //图片预览
         btn_img.setOnClickListener {
-
+            startActivity(Intent(this@MainActivity, ImgPreviewUI::class.java))
         }
     }
 

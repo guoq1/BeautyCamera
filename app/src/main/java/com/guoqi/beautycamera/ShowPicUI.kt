@@ -74,7 +74,7 @@ class ShowPicUI : AppCompatActivity() {
                 val intent = Intent()
                 intent.putExtra("imageUrl", waterFilePath)
                 intent.putExtra("address", tv_address.text.toString())
-                Log.e(TAG, "保存的imageUrl = " + waterFilePath)
+                Log.e(TAG, "保存的imageUrl = $waterFilePath")
                 setResult(Activity.RESULT_OK, intent)
                 finish()
             } else {

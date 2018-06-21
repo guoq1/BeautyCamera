@@ -31,6 +31,7 @@
         </activity>
         <activity android:name=".CameraUI" />
         <activity android:name=".ShowPicUI" />
+        <activity android:name=".ImgPreviewUI" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
