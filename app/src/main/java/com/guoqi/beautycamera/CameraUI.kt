@@ -37,14 +37,19 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
     //屏幕宽高
     private var screenWidth: Int = 0
     private var screenHeight: Int = 0
+
+    //图片高度
+    private var picHeight: Int = 0
+
     //闪光灯模式 0:关闭 1: 开启 2: 自动
     private var light_num = 0
+
     //延迟时间
     private var delay_time: Int = 0
     private var delay_time_temp: Int = 0
     private var is_camera_delay: Boolean = false
-    private var picHeight: Int = 0
 
+    //保存的图片
     private lateinit var saveBitmap: Bitmap//拍照结果Bitmap
     private lateinit var img_path_magic: String//拍照图片路径
 
@@ -54,7 +59,8 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
     private var noMagicFilterGroup: GPUImageFilterGroup? = null
     private var isInMagic: Boolean = false
 
-    private var isPreviewing: Boolean = false //是否预览
+    //是否预览
+    private var isPreviewing: Boolean = false
 
     private val mHandler = @SuppressLint("HandlerLeak")
     object : Handler() {
@@ -86,7 +92,8 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        supportActionBar?.hide()
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.ui_camera)
 
@@ -137,8 +144,9 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
             setMagic(isInMagic)
         }
 
+        //设置滤镜
         gpuImage?.setFilter(if (isInMagic) magicFilterGroup else noMagicFilterGroup)
-
+        //切换滤镜
         iv_magic.setOnClickListener {
             isInMagic = !isInMagic
             setMagic(isInMagic)
@@ -171,8 +179,7 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
         val dm = resources.displayMetrics
         screenWidth = dm.widthPixels
         screenHeight = dm.heightPixels
-        Log.e(TAG, """screenWidth = $screenWidth""")
-        Log.e(TAG, """screenHeight = $screenHeight""")
+        Log.e(TAG, "screenWidth = $screenWidth | screenHeight = $screenHeight")
     }
 
 
@@ -332,44 +339,17 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
     private fun capture() {
         ll_water.visibility = View.GONE
         Toast.makeText(this, "图片正在处理中...", Toast.LENGTH_SHORT).show()
-        mCamera?.takePicture(null, null, Camera.PictureCallback { data, camera ->
-            val cTime = System.currentTimeMillis().toString()
-            val photoNameOri = cTime + "_ori.jpeg"
-            val photoNameMagic = cTime + "_magic.jpeg"
+        mCamera?.takePicture(null, null, Camera.PictureCallback { data, _ ->
+            val photoNameMagic = System.currentTimeMillis().toString() + "_magic.jpeg"
             img_path_magic = Environment.getExternalStorageDirectory().absolutePath + File.separator + APK_FILE + File.separator + photoNameMagic
 
             var bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
             saveBitmap = CameraUtil.getInstance().setTakePicktrueOrientation(mCameraId, bitmap)
             SaveTask().execute()
 
-
-            //保存美颜照片
-//            gpuImage?.setImage(bitmap)
-//            gpuImage?.saveToPictures(Environment.getExternalStorageDirectory().absolutePath + File.separator + APK_FILE + CACHE, photoNameMagic) {
-            //camera.startPreview();
-            //surfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY;
-//            };
-
-//            var result = gpuImage?.getBitmapWithFilterApplied(bitmap)
-//            //旋转图片90度
-//            result = ImageUtil.rotateBitmap(result, ImageUtil.readPictureDegree(img_path_magic) - 90)
-//            BitmapUtils.saveJPGE_After(context, result, img_path_magic, 100)
-
-            //普通照片
-//            val img_path_ori = Environment.getExternalStorageDirectory().absolutePath + File.separator + APK_FILE + CACHE + File.separator + photoNameOri
-//            BitmapUtils.saveJPGE_After(context, saveBitmap, img_path_ori, 100)
-
             if (!bitmap.isRecycled) {
                 bitmap.recycle()
             }
-
-//            if (!saveBitmap.isRecycled) {
-//                saveBitmap.recycle()
-//            }
-
-//            if (!result!!.isRecycled) {
-//                result.recycle()
-//            }
         })
     }
 
@@ -381,32 +361,23 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
         try {
             val parameters = camera!!.parameters
 
-            if (parameters.supportedFocusModes.contains(
-                            Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+            if (parameters.supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 parameters.focusMode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
             }
 
             //这里第三个参数为最小尺寸 getPropPreviewSize方法会对从最小尺寸开始升序排列 取出所有支持尺寸的最小尺寸
             val previewSize = CameraUtil.getInstance().getPropSizeForHeight(parameters.supportedPreviewSizes, 800)
-            Log.e("SIZE", "previewSize = " + previewSize.width + " | " + previewSize.height)
+            Log.e(TAG, "previewSize = " + previewSize.width + " | " + previewSize.height)
             parameters.setPreviewSize(previewSize.width, previewSize.height)
 
             val pictrueSize = CameraUtil.getInstance().getPropSizeForHeight(parameters.supportedPictureSizes, 800)
-            Log.e("SIZE", "pictureSize = " + pictrueSize.width + " | " + pictrueSize.height)
+            Log.e(TAG, "pictureSize = " + pictrueSize.width + " | " + pictrueSize.height)
             parameters.setPictureSize(pictrueSize.width, pictrueSize.height)
 
             camera.parameters = parameters
 
-            /**
-             * 设置surfaceView的尺寸 因为camera默认是横屏，所以取得支持尺寸也都是横屏的尺寸
-             * 我们在startPreview方法里面把它矫正了过来，但是这里我们设置设置surfaceView的尺寸的时候要注意 previewSize.height<previewSize.width previewSize.width才是surfaceView的高度 一般相机都是屏幕的宽度 这里设置为屏幕宽度 高度自适应 你也可以设置自己想要的大小></previewSize.width>
-             *
-             */
             picHeight = screenWidth * pictrueSize.width / pictrueSize.height
 
-//            val params = FrameLayout.LayoutParams(screenWidth, screenHeight/*screenWidth * pictrueSize.width / pictrueSize.height*/)
-            //这里当然可以设置拍照位置 比如居中
-//            params.gravity = Gravity.CENTER;
             //修正预览拉长效果
             var params = changePreviewSize(camera, picHeight, screenWidth)
             Log.e(TAG, "surfaceView展现的尺寸:" + params.height + "*" + params.width)
@@ -448,8 +419,8 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
                 deltaRatio = Math.abs(reqRatio - curRatio);
                 if (deltaRatio < deltaRatioMin) {
                     deltaRatioMin = deltaRatio;
-                    Log.e("changePreviewSize", "最接近pic尺寸的预览尺寸比例:" + deltaRatioMin)
-                    Log.e("changePreviewSize", "最接近pic尺寸的预览尺寸:" + size.width + "*" + size.height)
+                    Log.e(TAG, "最接近pic尺寸的预览尺寸比例:" + deltaRatioMin)
+                    Log.e(TAG, "最接近pic尺寸的预览尺寸:" + size.width + "*" + size.height)
                     closelySize = size;
                 }
             }
@@ -470,7 +441,7 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
                 closelySize?.width = screenWidth
                 closelySize?.height = shouldPreviewHeight
             }
-            Log.e("changePreviewSize", "调整预览尺寸为：" + closelySize?.width + "*" + closelySize?.height);
+            Log.e(TAG, "调整预览尺寸为：" + closelySize?.width + "*" + closelySize?.height);
         }
 
         //空白占位高度 = screenHeight - 预览高度closelySize.height - 顶部栏
@@ -489,7 +460,7 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
         parameters.setPreviewSize(closelySize!!.width, closelySize!!.height)
         camera.parameters = parameters
 
-        Log.e("changePreviewSize", "预览尺寸最终修改为：" + closelySize?.width + "*" + closelySize?.height);
+        Log.e(TAG, "预览尺寸最终修改为：" + closelySize?.width + "*" + closelySize?.height);
         return FrameLayout.LayoutParams(closelySize.height, closelySize.width)
     }
 
@@ -533,11 +504,6 @@ class CameraUI : AppCompatActivity(), View.OnClickListener {
             finish()
 
         }
-    }
-
-    override fun onBackPressed() {
-        setResult(RESULT_OK)
-        super.onBackPressed()
     }
 }
 

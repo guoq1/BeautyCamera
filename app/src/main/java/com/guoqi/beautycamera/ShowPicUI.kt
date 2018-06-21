@@ -23,12 +23,15 @@ import java.io.File
 
 class ShowPicUI : AppCompatActivity() {
 
+    val TAG = this.javaClass.simpleName
+
     private var picWidth: Int = 0
     private var picHeight: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        supportActionBar?.hide()
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.ui_show_pic)
 
@@ -71,7 +74,7 @@ class ShowPicUI : AppCompatActivity() {
                 val intent = Intent()
                 intent.putExtra("imageUrl", waterFilePath)
                 intent.putExtra("address", tv_address.text.toString())
-                Log.e("imageUrl", waterFilePath)
+                Log.e(TAG, "保存的imageUrl = " + waterFilePath)
                 setResult(Activity.RESULT_OK, intent)
                 finish()
             } else {
@@ -83,7 +86,7 @@ class ShowPicUI : AppCompatActivity() {
         }
     }
 
-    //截取layout
+    //截取layout保存图片,会有黑边
     private fun getScreenPhoto(waterPhoto: RelativeLayout?): Bitmap {
         waterPhoto!!.isDrawingCacheEnabled = true
         waterPhoto.buildDrawingCache()
@@ -95,7 +98,7 @@ class ShowPicUI : AppCompatActivity() {
         return bitmap1
     }
 
-    //截取照片相片
+    //截取照片相片,不同分辨率导致水印的大小不同
     private fun getView2Bitmap(): Bitmap {
         ll_waterMarker!!.isDrawingCacheEnabled = true
         var waterBitmapCache = ll_waterMarker.drawingCache
