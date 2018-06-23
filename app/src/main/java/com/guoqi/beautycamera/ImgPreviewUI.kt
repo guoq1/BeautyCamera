@@ -9,7 +9,9 @@ import kotlinx.android.synthetic.main.ui_img_preview.*
 import java.io.IOException
 import java.io.InputStream
 
-
+/**
+ * https://github.com/BradLarson/GPUImage
+ */
 class ImgPreviewUI : AppCompatActivity() {
 
     val TAG = this.javaClass.simpleName
@@ -75,13 +77,40 @@ class ImgPreviewUI : AppCompatActivity() {
         filterList.add("不透明度")
 
         //------------图像处理----------------
+        filterList.add("2D3D")
+        filterList.add("锐化")
+        filterList.add("高斯模糊")
+        filterList.add("框模糊")
+        filterList.add("双边模糊")
+        filterList.add("卷积核")
+        filterList.add("膨胀")
+        filterList.add("膨胀2")
 
+        //------------混合模式----------------
+
+
+        //------------视觉效果----------------
+        filterList.add("半色调")
+        filterList.add("黑白交叉")
+        filterList.add("草图")
+        filterList.add("卡通")
+        filterList.add("降噪")
+        filterList.add("浮雕")
+        filterList.add("简单图象")
+        filterList.add("旋转失真")
+        filterList.add("凸起")
+        filterList.add("折射")
+        filterList.add("折射2")
+        filterList.add("渐晕")
+        filterList.add("抽象")
+        filterList.add("模拟CGA")
 
         filterListAdapter = FilterListAdapter(this, filterList)
         hlv_filter.adapter = filterListAdapter
         hlv_filter.setOnItemClickListener { _, _, i, _ ->
             filterListAdapter.setCheckItem(i)
             when (filterList[i]) {
+            //------------颜色调整----------------
                 "黑白" -> {
                     gpuImage?.setFilter(GPUImageGrayscaleFilter())
                 }
@@ -165,6 +194,134 @@ class ImgPreviewUI : AppCompatActivity() {
                 "不透明度" -> {//调整传入图像的Alpha通道
                     /*不透明度：将每个像素的输入alpha通道乘以（0.0 - 1.0，默认值为1.0）的值，*/
                     gpuImage?.setFilter(GPUImageChromaKeyBlendFilter())
+                }
+
+            //------------图像处理----------------
+
+                "2D3D" -> {//这适用于图像的任意二维或三维变换
+                    /*affineTransform：这需要一个CGAffineTransform来调整二维图像
+                    transform3D：这需要CATransform3D来处理3D图像
+                    ignoreAspectRatio：默认情况下，转换图像的高宽比保持不变，但可以将其设置为YES以使转换与高宽比无关*/
+                    gpuImage?.setFilter(GPUImageTransformFilter())
+                }
+                "锐化" -> {//锐化图像
+                    /*清晰度：适用的清晰度调整（-4.0 - 4.0，默认为0.0）*/
+                    gpuImage?.setFilter(GPUImageSharpenFilter(2.0f))
+                }
+                "高斯模糊" -> {//硬件优化的可变半径高斯模糊
+                    /*texelSpacingMultiplier：texels间隔的乘数，范围从0.0开始，默认为1.0。调整这可能会稍微增加模糊强度，但会在结果中引入伪影。强烈建议先使用其他参数，然后再触摸此参数。
+                    blurRadiusInPixels：用于模糊的半径（以像素为单位），默认值为2.0。这调整了高斯分布函数中的西格玛变量。
+                    blurRadiusAsFractionOfImageWidth：
+                    blurRadiusAsFractionOfImageHeight：设置这些属性将允许模糊半径根据图像的大小进行缩放
+                    blurPasses：依次模糊输入图像的次数。通过越多，过滤器越慢。*/
+                    gpuImage?.setFilter(GPUImageGaussianBlurFilter(2.0f))
+                }
+                "框模糊" -> {//硬件优化的可变半径框模糊
+                    /*texelSpacingMultiplier：texels间隔的乘数，范围从0.0开始，默认为1.0。调整这可能会稍微增加模糊强度，但会在结果中引入伪影。强烈建议先使用其他参数，然后再触摸此参数。
+                    blurRadiusInPixels：用于模糊的半径（以像素为单位），默认值为2.0。这调整了高斯分布函数中的西格玛变量。
+                    blurRadiusAsFractionOfImageWidth：
+                    blurRadiusAsFractionOfImageHeight：设置这些属性将允许模糊半径根据图像的大小进行缩放
+                    blurPasses：依次模糊输入图像的次数。通过越多，过滤器越慢。*/
+                    gpuImage?.setFilter(GPUImageBoxBlurFilter(2.0f))
+                }
+                "双边模糊" -> {//双边模糊，尝试在保留锐利边缘的同时模糊相似的颜色值
+                    /*texelSpacingMultiplier：texel读取间隔的乘数，范围从0.0开始，默认值为4.0
+                    distanceNormalizationFactor：中心颜色和样本颜色之间距离的标准化因子，默认值为8.0。*/
+                    gpuImage?.setFilter(GPUImageBilateralFilter(3.0f))
+                }
+                "卷积核" -> {//针对图像运行3x3卷积核
+                    /*卷积核：卷积核是应用于像素及其周围8个像素的值的3×3矩阵。该矩阵按行优先顺序指定，左上角像素为one.one，右下角为three.three。如果矩阵中的值不等于1.0，则图像可能变亮或变暗。*/
+                    gpuImage?.setFilter(GPUImage3x3ConvolutionFilter())
+                }
+                "膨胀" -> {//执行图像膨胀操作，其中矩形邻域中红色通道的最大强度用于此像素的强度。要初始化的矩形区域的半径在初始化时指定，范围为1-4像素。这是为了与灰度图像一起使用，并且它扩展了明亮的区域。
+                    gpuImage?.setFilter(GPUImageDilationFilter())
+                }
+                "膨胀2" -> {//这与GPUImageDilationFilter相同，只不过它对所有颜色通道都有效，而不仅仅是红色通道。
+                    gpuImage?.setFilter(GPUImageRGBDilationFilter())
+                }
+            //------------混合模式----------------
+                "颜色替换" -> {//选择性地用第二张图像替换第一张图像中的颜色
+                    /*thresholdSensitivity：颜色匹配需要与要替换的目标颜色存在多少距离（默认值为0.4）
+                    平滑：融合色彩匹配的顺利程度（默认值为0.1*/
+                    gpuImage?.setFilter(GPUImageChromaKeyBlendFilter())
+                }
+                "混合" -> {//应用两个图像的混合混合
+                    /*混合：第二个图像覆盖第一个图像的程度（0.0 - 1.0，默认为0.5）*/
+                    gpuImage?.setFilter(GPUImageDissolveBlendFilter())
+                }
+
+            //------------视觉效果----------------
+                "半色调" -> {//为图像应用半色调效果，如新闻打印
+                    /*fractionalWidthOfAPixel：网点的宽度和高度的一部分（0.0 - 1.0，默认值为0.05）*/
+                    gpuImage?.setFilter(GPUImageHalftoneFilter())
+                }
+                "黑白交叉" -> {//将图像转换为黑白交叉阴影图案
+                    /*crossHatchSpacing：图像的分数宽度，用作交叉影线的间距。默认值是0.03。
+                    lineWidth：交叉线的相对宽度。默认值是0.003。*/
+                    gpuImage?.setFilter(GPUImageCrosshatchFilter())
+                }
+                "草图" -> {//将视频转换为草图。这只是倒置颜色的索贝尔边缘检测滤波器
+                    /*texelWidth：
+                    texelHeight：这些参数影响检测到的边缘的可见性
+                    edgeStrength：调整滤镜的动态范围。较高的值会导致较强的边缘，但可以使强度色彩空间饱和。默认值是1.0。*/
+                    gpuImage?.setFilter(GPUImageSketchFilter())
+                }
+                "卡通" -> {//它使用Sobel边缘检测在对象周围放置黑色边框，然后对图像中的颜色进行量化，使图像具有卡通般的质量。
+                    gpuImage?.setFilter(GPUImageToonFilter())
+                }
+                "降噪" -> {//它使用与GPUImageToonFilter相似的过程，只有它在高斯模糊之前具有高斯模糊以消除噪音。
+                    /*texelWidth：
+                    texelHeight：这些参数影响检测到的边缘的可见性
+                    blurRadiusInPixels：基础高斯模糊的半径。默认值是2.0。
+                    阈值：边缘检测的灵敏度，较低的值更敏感。范围从0.0到1.0，默认值为0.2
+                    quantizationLevels：在最终图像中表示的颜色层数。默认值是10.0*/
+                    gpuImage?.setFilter(GPUImageSmoothToonFilter())
+                }
+                "浮雕" -> {//在图像上应用浮雕效果
+                    /*强度：压花的强度，从0.0到4.0，1.0为正常水平*/
+                    gpuImage?.setFilter(GPUImageEmbossFilter())
+                }
+                "简单图象" -> {//这会将颜色动态范围减少到指定的步骤数，从而形成卡通般简单的图像阴影。
+                    /*colorLevels：减少图像空间的颜色级别数。范围从1到256，默认值为10。*/
+                    gpuImage?.setFilter(GPUImagePosterizeFilter(15))
+                }
+                "旋转失真" -> {//在图像上创建旋转失真
+                    /*半径（radius）：应用变形的中心半径，默认值为0.5
+                    center（中心）：图像的中心（从0到1.0的归一化坐标）关于哪个扭曲，默认为（0.5,0.5）
+                    angle（角度）：适用于图像的扭曲量，默认值为1.0*/
+                    gpuImage?.setFilter(GPUImageSwirlFilter())
+                }
+                "凸起" -> {//在图像上创建凸起变形
+                    /*半径：从中心开始应用失真的半径，默认值为0.25
+                    center（中心）：图像的中心（从0到1.0的归一化坐标），关于哪个要扭曲，默认为（0.5,0.5）
+                    比例：应用的失真量，从-1.0到1.0，默认值为0.5*/
+                    gpuImage?.setFilter(GPUImageBulgeDistortionFilter())
+                }
+                "折射" -> {//通过玻璃球模拟折射
+                    /*中心：应用失真的中心，默认值为（0.5,0.5）
+                    半径：失真半径，范围从0.0到1.0，默认值为0.25
+                    refractiveIndex：球体的折射率，默认值为0.71*/
+                    gpuImage?.setFilter(GPUImageSphereRefractionFilter())
+                }
+                "折射2" -> {//与GPUImageSphereRefractionFilter相同，只有图像不反转，并且玻璃边缘有一点结霜
+                    /*中心：应用失真的中心，默认值为（0.5,0.5）
+                    半径：失真半径，范围从0.0到1.0，默认值为0.25
+                    refractiveIndex：球体的折射率，默认值为0.71*/
+                    gpuImage?.setFilter(GPUImageGlassSphereFilter())
+                }
+                "渐晕" -> {//执行渐晕效果，淡化图像的边缘
+                    /*vignetteCenter：tex coords中的小插曲的中心（CGPoint），默认为0.5,0.5
+                    vignetteColor：用于装饰图案（GPUVector3）的颜色，默认为黑色
+                    vignetteStart：从晕影效果开始的中心开始的标准化距离，默认值为0.5
+                    vignetteEnd：距离晕影效果结束的中心的标准化距离，默认值为0.75*/
+                    gpuImage?.setFilter(GPUImageVignetteFilter())
+                }
+                "抽象" -> {//科威拉图像抽象，从Kyprianidis等人的工作中得出。人。在GPU Pro集合的出版物“GPU上的各向异性科威拉滤波”中。这会产生一幅类似油画的图像，但其计算量非常大，因此在iPad 2上渲染帧可能需要几秒钟。这可能最适合用于静止图像。
+                    /*半径：以整数指定应用滤镜时从中心像素出发测试的像素数，缺省值为4.较高的值会创建更抽象的图像，但代价是处理时间要大得多。*/
+                    gpuImage?.setFilter(GPUImageKuwaharaFilter())
+                }
+                "模拟CGA" -> {//模拟CGA监视器的颜色空间
+                    gpuImage?.setFilter(GPUImageCGAColorspaceFilter())
                 }
             }
         }
