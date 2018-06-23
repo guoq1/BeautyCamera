@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -12,21 +13,48 @@
         android:layout_weight="1"
         android:src="@mipmap/ic_launcher" />
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btn_ori"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="原图" />
+        android:layout_height="wrap_content">
 
         <com.guoqi.beautycamera.HorizontalListView
             android:id="@+id/hlv_filter"
             android:layout_width="match_parent"
             android:layout_height="40dp" />
-    </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/hlv_filter"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_ori"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="原图" />
+
+
+            <com.warkiz.widget.IndicatorStayLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <com.warkiz.widget.IndicatorSeekBar
+                    android:id="@+id/rangeSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:isb_progress="0"
+                    app:isb_progress_value_float="true"
+                    app:isb_show_indicator="rectangle"
+                    app:isb_show_tick_texts="true"
+                    app:isb_tick_texts_color="@color/colorPrimary"
+                    app:isb_tick_texts_size="15sp"
+                    app:isb_ticks_count="2" />
+            </com.warkiz.widget.IndicatorStayLayout>
+        </LinearLayout>
+
+
+    </RelativeLayout>
 </LinearLayout>

@@ -1,18 +1,23 @@
 package com.guoqi.beautycamera
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.warkiz.widget.IndicatorSeekBar
+import com.warkiz.widget.OnSeekChangeListener
+import com.warkiz.widget.SeekParams
 import jp.co.cyberagent.android.gpuimage.*
 import kotlinx.android.synthetic.main.ui_img_preview.*
 import java.io.IOException
 import java.io.InputStream
 
+
 /**
  * https://github.com/BradLarson/GPUImage
  */
-class ImgPreviewUI : AppCompatActivity() {
+class ImgPreviewUI : AppCompatActivity(), OnSeekChangeListener {
 
     val TAG = this.javaClass.simpleName
 
@@ -20,6 +25,7 @@ class ImgPreviewUI : AppCompatActivity() {
     var bitmap: Bitmap? = null
     private lateinit var filterListAdapter: FilterListAdapter
     private var filterList = ArrayList<String>()
+    private var curFilter = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +56,13 @@ class ImgPreviewUI : AppCompatActivity() {
         gpuImage?.setImage(bitmap)
     }
 
+
+    @SuppressLint("NewApi")
     private fun initData() {
+        rangeSeekBar.setDecimalScale(1)
+//        rangeSeekBar.setIndicatorTextFormat("0.0")
+        rangeSeekBar.onSeekChangeListener = this
+
         btn_ori.setOnClickListener {
             gpuImage?.setFilter(GPUImageFilter())
             filterListAdapter.setCheckItem(-1)
@@ -109,28 +121,54 @@ class ImgPreviewUI : AppCompatActivity() {
         hlv_filter.adapter = filterListAdapter
         hlv_filter.setOnItemClickListener { _, _, i, _ ->
             filterListAdapter.setCheckItem(i)
+            curFilter = filterList[i]
             when (filterList[i]) {
             //------------颜色调整----------------
                 "黑白" -> {
                     gpuImage?.setFilter(GPUImageGrayscaleFilter())
                 }
                 "亮度" -> {//调整后的亮度（-1.0 - 1.0，默认为0.0）
-                    gpuImage?.setFilter(GPUImageBrightnessFilter(0.8f))
+                    rangeSeekBar.min = -1.0f
+                    rangeSeekBar.max = 1.0f
+                    rangeSeekBar.setProgress(0.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImageBrightnessFilter())
                 }
                 "曝光" -> {//调整曝光（-10.0 - 10.0，默认为0.0）
-                    gpuImage?.setFilter(GPUImageExposureFilter(1.5f))
+                    rangeSeekBar.min = -10.0f
+                    rangeSeekBar.max = 10.0f
+                    rangeSeekBar.setProgress(0.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImageExposureFilter())
                 }
                 "对比度" -> {//调整后的对比度（0.0 - 4.0，默认值为1.0）
-                    gpuImage?.setFilter(GPUImageContrastFilter(2.0f))
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 4.0f
+                    rangeSeekBar.setProgress(1.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImageContrastFilter())
                 }
                 "饱和度" -> {//应用于图像的饱和度或去饱和度（0.0 - 2.0，默认值为1.0）
-                    gpuImage?.setFilter(GPUImageSaturationFilter(2.0f))
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 2.0f
+                    rangeSeekBar.setProgress(1.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImageSaturationFilter())
                 }
                 "反色" -> {//反转图像的颜色
                     gpuImage?.setFilter(GPUImageColorInvertFilter())
                 }
                 "棕褐色" -> {//棕褐色调取代正常图像颜色的程度（0.0 - 1.0，默认为1.0）
-                    gpuImage?.setFilter(GPUImageSepiaFilter(1.2f))
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 1.0f
+                    rangeSeekBar.setProgress(1.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImageSepiaFilter())
                 }
                 "阶调曲线" -> {//根据每个颜色通道的样条曲线调整图像的颜色
                     /*
@@ -141,6 +179,11 @@ class ImgPreviewUI : AppCompatActivity() {
                     gpuImage?.setFilter(GPUImageToneCurveFilter())
                 }
                 "灰度系数" -> {//应用的伽玛调整（0.0 - 3.0，默认值为1.0）
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 3.0f
+                    rangeSeekBar.setProgress(1.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageGammaFilter())
                 }
                 "关卡" -> {
@@ -160,11 +203,21 @@ class ImgPreviewUI : AppCompatActivity() {
                 }
                 "色调" -> {//调整图像的色调
                     /*色调：色调角度，以度为单位。默认90度*/
+                    rangeSeekBar.min = 0f
+                    rangeSeekBar.max = 90f
+                    rangeSeekBar.setProgress(90f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageHueFilter())
                 }
                 "白平衡" -> {//调整图像的白平衡。
                     /*温度：以ºK调整图像的温度。4000的值非常酷，7000非常温暖。默认值是5000.请注意，4000和5000之间的比例与5000和7000之间的比例几乎相同。
                     色调：通过调整图像的色调。-200的值非常绿，200 非常粉。默认值是0。*/
+                    rangeSeekBar.min = 4000f
+                    rangeSeekBar.max = 7000f
+                    rangeSeekBar.setProgress(5000f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageWhiteBalanceFilter())
                 }
                 "阴影和高光" -> {//调整图像的阴影和高光
@@ -191,11 +244,6 @@ class ImgPreviewUI : AppCompatActivity() {
                     /*不透明度：将每个像素的输入alpha通道乘以（0.0 - 1.0，默认值为1.0）的值，*/
                     gpuImage?.setFilter(GPUImageOpacityFilter())
                 }
-                "不透明度" -> {//调整传入图像的Alpha通道
-                    /*不透明度：将每个像素的输入alpha通道乘以（0.0 - 1.0，默认值为1.0）的值，*/
-                    gpuImage?.setFilter(GPUImageChromaKeyBlendFilter())
-                }
-
             //------------图像处理----------------
 
                 "2D3D" -> {//这适用于图像的任意二维或三维变换
@@ -206,7 +254,12 @@ class ImgPreviewUI : AppCompatActivity() {
                 }
                 "锐化" -> {//锐化图像
                     /*清晰度：适用的清晰度调整（-4.0 - 4.0，默认为0.0）*/
-                    gpuImage?.setFilter(GPUImageSharpenFilter(2.0f))
+                    rangeSeekBar.min = -4.0f
+                    rangeSeekBar.max = 4.0f
+                    rangeSeekBar.setProgress(0.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImageSharpenFilter())
                 }
                 "高斯模糊" -> {//硬件优化的可变半径高斯模糊
                     /*texelSpacingMultiplier：texels间隔的乘数，范围从0.0开始，默认为1.0。调整这可能会稍微增加模糊强度，但会在结果中引入伪影。强烈建议先使用其他参数，然后再触摸此参数。
@@ -234,6 +287,11 @@ class ImgPreviewUI : AppCompatActivity() {
                     gpuImage?.setFilter(GPUImage3x3ConvolutionFilter())
                 }
                 "膨胀" -> {//执行图像膨胀操作，其中矩形邻域中红色通道的最大强度用于此像素的强度。要初始化的矩形区域的半径在初始化时指定，范围为1-4像素。这是为了与灰度图像一起使用，并且它扩展了明亮的区域。
+                    rangeSeekBar.min = 1.0f
+                    rangeSeekBar.max = 4.0f
+                    rangeSeekBar.setProgress(1.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageDilationFilter())
                 }
                 "膨胀2" -> {//这与GPUImageDilationFilter相同，只不过它对所有颜色通道都有效，而不仅仅是红色通道。
@@ -247,12 +305,22 @@ class ImgPreviewUI : AppCompatActivity() {
                 }
                 "混合" -> {//应用两个图像的混合混合
                     /*混合：第二个图像覆盖第一个图像的程度（0.0 - 1.0，默认为0.5）*/
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 1.0f
+                    rangeSeekBar.setProgress(0.5f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageDissolveBlendFilter())
                 }
 
             //------------视觉效果----------------
                 "半色调" -> {//为图像应用半色调效果，如新闻打印
                     /*fractionalWidthOfAPixel：网点的宽度和高度的一部分（0.0 - 1.0，默认值为0.05）*/
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 1.0f
+                    rangeSeekBar.setProgress(0.05f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageHalftoneFilter())
                 }
                 "黑白交叉" -> {//将图像转换为黑白交叉阴影图案
@@ -279,11 +347,21 @@ class ImgPreviewUI : AppCompatActivity() {
                 }
                 "浮雕" -> {//在图像上应用浮雕效果
                     /*强度：压花的强度，从0.0到4.0，1.0为正常水平*/
+                    rangeSeekBar.min = 0.0f
+                    rangeSeekBar.max = 4.0f
+                    rangeSeekBar.setProgress(1.0f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
                     gpuImage?.setFilter(GPUImageEmbossFilter())
                 }
                 "简单图象" -> {//这会将颜色动态范围减少到指定的步骤数，从而形成卡通般简单的图像阴影。
                     /*colorLevels：减少图像空间的颜色级别数。范围从1到256，默认值为10。*/
-                    gpuImage?.setFilter(GPUImagePosterizeFilter(15))
+                    rangeSeekBar.min = 1f
+                    rangeSeekBar.max = 256f
+                    rangeSeekBar.setProgress(10f)
+                    val arr = arrayOf(rangeSeekBar.min.toString(), rangeSeekBar.max.toString())
+                    rangeSeekBar.customTickTexts(arr)
+                    gpuImage?.setFilter(GPUImagePosterizeFilter())
                 }
                 "旋转失真" -> {//在图像上创建旋转失真
                     /*半径（radius）：应用变形的中心半径，默认值为0.5
@@ -327,5 +405,57 @@ class ImgPreviewUI : AppCompatActivity() {
         }
     }
 
+    override fun onSeeking(p: SeekParams) {
+        when (curFilter) {
+            "亮度" -> {//调整后的亮度（-1.0 - 1.0，默认为0.0）
+                gpuImage?.setFilter(GPUImageBrightnessFilter(p.progressFloat))
+            }
+            "曝光" -> {//调整曝光（-10.0 - 10.0，默认为0.0）
+                gpuImage?.setFilter(GPUImageExposureFilter(p.progressFloat))
+            }
+            "对比度" -> {//调整后的对比度（0.0 - 4.0，默认值为1.0）
+                gpuImage?.setFilter(GPUImageContrastFilter(p.progressFloat))
+            }
+            "饱和度" -> {//应用于图像的饱和度或去饱和度（0.0 - 2.0，默认值为1.0）
+                gpuImage?.setFilter(GPUImageSaturationFilter(p.progressFloat))
+            }
+            "棕褐色" -> {//棕褐色调取代正常图像颜色的程度（0.0 - 1.0，默认为1.0）
+                gpuImage?.setFilter(GPUImageSepiaFilter(p.progressFloat))
+            }
+            "灰度系数" -> {//应用的伽玛调整（0.0 - 3.0，默认值为1.0）
+                gpuImage?.setFilter(GPUImageGammaFilter(p.progressFloat))
+            }
+            "色调" -> {//调整图像的色调
+                gpuImage?.setFilter(GPUImageHueFilter(p.progressFloat))
+            }
+            "白平衡" -> {//调整图像的白平衡。
+                gpuImage?.setFilter(GPUImageWhiteBalanceFilter(p.progressFloat, 0.0f))
+            }
+            "不透明度" -> {//调整传入图像的Alpha通道
+                gpuImage?.setFilter(GPUImageOpacityFilter(p.progressFloat))
+            }
+            "锐化" -> {//锐化图像
+                gpuImage?.setFilter(GPUImageSharpenFilter(p.progressFloat))
+            }
+            "膨胀" -> {//执行图像膨胀操作，其中矩形邻域中红色通道的最大强度用于此像素的强度。要初始化的矩形区域的半径在初始化时指定，范围为1-4像素。这是为了与灰度图像一起使用，并且它扩展了明亮的区域。
+                gpuImage?.setFilter(GPUImageDilationFilter(p.progress))
+            }
+            "混合" -> {//应用两个图像的混合混合
+                gpuImage?.setFilter(GPUImageDissolveBlendFilter(p.progressFloat))
+            }
+            "半色调" -> {//为图像应用半色调效果，如新闻打印
+                gpuImage?.setFilter(GPUImageHalftoneFilter(p.progressFloat))
+            }
+            "浮雕" -> {//在图像上应用浮雕效果
+                gpuImage?.setFilter(GPUImageEmbossFilter(p.progressFloat))
+            }
+            "简单图象" -> {//这会将颜色动态范围减少到指定的步骤数，从而形成卡通般简单的图像阴影。
+                gpuImage?.setFilter(GPUImagePosterizeFilter(p.progress))
+            }
+        }
+    }
 
+    override fun onStartTrackingTouch(seekBar: IndicatorSeekBar) {}
+
+    override fun onStopTrackingTouch(seekBar: IndicatorSeekBar) {}
 }
